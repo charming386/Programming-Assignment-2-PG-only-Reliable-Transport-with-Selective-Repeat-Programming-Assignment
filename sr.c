@@ -11,7 +11,7 @@
 #define RTT  16.0       /* round trip time.  MUST BE SET TO 16.0 when submitting assignment */
 #define WINDOWSIZE 6    /* the maximum number of buffered unacked packet
                           MUST BE SET TO 6 when submitting assignment */
-#define SEQSPACE 7      /* the min sequence space for GBN must be at least windowsize + 1 */
+#define SEQSPACE 12      /* the min sequence space for GBN must be at least windowsize + 1 */
 #define NOTINUSE (-1)   /* used to fill header fields that are not being used */
 
 /* generic procedure to compute the checksum of a packet.  Used by both sender and receiver
@@ -47,7 +47,7 @@ static struct pkt buffer[WINDOWSIZE];  /* array for storing packets waiting for 
 static int windowfirst, windowlast;    /* array indexes of the first/last packet awaiting ACK */
 static int windowcount;                /* the number of packets currently awaiting an ACK */
 static int A_nextseqnum;               /* the next sequence number to be used by the sender */     
-static bool ack[SEQSPACE];             /* array to keep track of which packets have been ACKed */
+static bool ack[WINDOWSIZE];             /* array to keep track of which packets have been ACKed */
 
 
 /* called from layer 5 (application layer), passed the message to be sent to other side */
@@ -115,7 +115,6 @@ void A_input(struct pkt packet)
         printf("----A: ACK %d is not a duplicate\n",packet.acknum);
       new_ACKs++;
       ack[packet.acknum] = true;
-      packets_received++;
 
       if (packet.acknum == buffer[windowfirst].seqnum) {
         while (windowcount > 0 && ack[buffer[windowfirst].seqnum]) {
@@ -130,7 +129,7 @@ void A_input(struct pkt packet)
     }
     else {
       if (TRACE > 0)
-        printf("----A: ACK %d is a duplicate\n",packet.acknum);
+        printf("----A: duplicate ACK received, do nothing!\n");
     }
   }
   else if (TRACE > 0)
@@ -201,7 +200,7 @@ void B_input(struct pkt packet)
       }
 
       while(received[expectedseqnum] == true) {
-        tolayer5(B, receivedpkt[expectedseqnum].payload); 
+        tolayer5(B, packet.payload); 
         received[expectedseqnum] = false;
         expectedseqnum = (expectedseqnum + 1) % SEQSPACE;
       }
@@ -225,7 +224,6 @@ void B_input(struct pkt packet)
 /* entity B routines are called. You can use it to do any initialization */
 void B_init(void)
 {
-  int i;
   expectedseqnum = 0; 
 
 }
