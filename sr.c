@@ -100,9 +100,6 @@ void A_output(struct msg message)
 */
 void A_input(struct pkt packet)
 {
-  int ackcount = 0;
-  int i;
-
   /* if received ACK is not corrupted */
   if (!IsCorrupted(packet)) {
     if (TRACE > 0)
@@ -139,8 +136,6 @@ void A_input(struct pkt packet)
 /* called when A's timer goes off */
 void A_timerinterrupt(void)
 {
-  int i;
-
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
 
@@ -173,8 +168,6 @@ void A_init(void)
 /********* Receiver (B)  variables and procedures ************/
 
 static int expectedseqnum; /* the sequence number expected next by the receiver */
-static int B_nextseqnum;   /* the sequence number for the next packets sent by B */
-static bool ack[SEQSPACE]; 
 static bool received[SEQSPACE]; 
 static struct pkt receivedpkt[SEQSPACE]; 
 
@@ -185,7 +178,6 @@ void B_input(struct pkt packet)
 {
   struct pkt sendpkt;
   int i;
-  bool all_ack;
 
   /* if not corrupted and received packet is in order */
   if  ( (!IsCorrupted(packet))) {
