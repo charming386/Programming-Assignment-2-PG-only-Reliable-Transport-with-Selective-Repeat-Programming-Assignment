@@ -46,9 +46,7 @@ bool IsCorrupted(struct pkt packet)
 static struct pkt buffer[WINDOWSIZE];  /* array for storing packets waiting for ACK */
 static int windowfirst, windowlast;    /* array indexes of the first/last packet awaiting ACK */
 static int windowcount;                /* the number of packets currently awaiting an ACK */
-static int A_nextseqnum;               /* the next sequence number to be used by the sender */
-static int window_full;                          
-static int total_ACKs_received;        
+static int A_nextseqnum;               /* the next sequence number to be used by the sender */     
 
 
 
@@ -195,9 +193,7 @@ void A_init(void)
 static int expectedseqnum; /* the sequence number expected next by the receiver */
 static int B_nextseqnum;   /* the sequence number for the next packets sent by B */
 static bool acked[SEQSPACE]; 
-static bool received[SEQSPACE];
-static int packets_received; 
-static int packets_resent;  
+static bool received[SEQSPACE]; 
 
 
 
@@ -206,8 +202,7 @@ void B_input(struct pkt packet)
 {
   struct pkt sendpkt;
   int i;
-  int seqnum = packet.seqnum;
-  int acknum = packet.acknum;
+  bool all_acked;
 
   /* if not corrupted and received packet is in order */
   if  ( (!IsCorrupted(packet))  && (packet.seqnum == expectedseqnum) ) {
@@ -215,8 +210,8 @@ void B_input(struct pkt packet)
       printf("----B: packet %d is correctly received, send ACK!\n",packet.seqnum);
     packets_received++;
 
-    acked[packet.seqnum] = true;  // mark the packet as received
-    bool all_acked = true;
+    acked[packet.seqnum] = true;  /*mark the packet as received*/ 
+    all_acked = true;
     for (i = 0; i < SEQSPACE; i++) {
       if (!acked[i]) {
         all_acked = false;
@@ -225,23 +220,23 @@ void B_input(struct pkt packet)
     }
     if (all_acked) {
       for (i = 0; i < SEQSPACE; i++) {
-        acked[i] = false; // reset the acked array
+        acked[i] = false; 
       }
     }
 
     if (received[packet.seqnum] == false) {
-      received[packet.seqnum] = true; // mark the packet as received
+      received[packet.seqnum] = true; /*mark the packet as received*/
       for (i = 0; i < SEQSPACE; i++) {
         if (received[i] == false) {
-          break; // stop when we find the first unreceived packet
+          break; 
         }
       }
       if (i == SEQSPACE) {
         for (i = 0; i < SEQSPACE; i++) {
-          received[i] = false; // reset the received array
+          received[i] = false; 
         }
       }
-      received[expectedseqnum] = false; // reset the expected sequence number
+      received[expectedseqnum] = false; 
     }
 
     
@@ -264,20 +259,20 @@ void B_input(struct pkt packet)
       sendpkt.acknum = expectedseqnum - 1;
   }
 
-  // deliver in order
+  /*deliver in order*/
   while (acked[expectedseqnum] == true) {
     tolayer5(B, packet.payload);
     acked[expectedseqnum] = false;
     expectedseqnum = (expectedseqnum + 1) % SEQSPACE;
   }
-  // send ACK for the last received packet
+  /*send ACK for the last received packet*/
   sendpkt.acknum = expectedseqnum;
-  sendpkt.seqnum = NOTINUSE; // not used in ACK packets
+  sendpkt.seqnum = NOTINUSE; 
   for (i = 0; i < 20; i++) {
-    sendpkt.payload[i] = '0'; // fill payload with 0's
+    sendpkt.payload[i] = '0'; /* fill payload with 0's*/
   }
-  sendpkt.checksum = ComputeChecksum(sendpkt); // compute checksum
-  tolayer3(B, sendpkt); // send ACK packet to A
+  sendpkt.checksum = ComputeChecksum(sendpkt); 
+  tolayer3(B, sendpkt); 
   if (TRACE > 0)
     printf("----B: ACK %d sent to A\n", sendpkt.acknum);
   packets_resent++;
@@ -301,12 +296,13 @@ void B_input(struct pkt packet)
 /* entity B routines are called. You can use it to do any initialization */
 void B_init(void)
 {
-  expectedseqnum = 0;
-  for (int i = 0; i < SEQSPACE; i++) {
-    acked[i] = false; // initialize the acked array
-    received[i] = false; // initialize the received array
+  int i;
+  expectedseqnum = 0; 
+  for (i = 0; i < SEQSPACE; i++) { 
+      acked[i] = false; 
+      received[i] = false; 
   }
-  B_nextseqnum = 0; // initialize the next sequence number
+  B_nextseqnum = 0; 
 }
 
 /******************************************************************************
